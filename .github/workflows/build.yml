@@ -1,0 +1,85 @@
+name: Build and Test Dopewars
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allows manual triggering
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable]
+
+    steps:
+    # Step 1: Check out the repository
+    - uses: actions/checkout@v3
+    
+    # Step 2: Install Rust toolchain
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.rust }}
+        override: true
+        components: rustfmt, clippy
+    
+    # Step 3: Install dependencies for GUI (Linux only)
+    - name: Install Linux Dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev
+    
+    # Step 4: Rust cache to speed up builds
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+    
+    # Step 5: Check formatting
+    - name: Check code formatting
+      run: cargo fmt -- --check
+    
+    # Step 6: Run clippy for linting
+    - name: Run clippy
+      run: cargo clippy -- -D warnings
+    
+    # Step 7: Build the application
+    - name: Build
+      run: cargo build --verbose
+    
+    # Step 8: Run tests
+    - name: Run tests
+      run: cargo test --verbose
+    
+    # Step 9: Build in release mode
+    - name: Build Release
+      run: cargo build --release
+    
+    # Step 10: Upload artifacts (executables)
+    - name: Upload Windows artifact
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v3
+      with:
+        name: dopewars-windows
+        path: target/release/dopewars-gui.exe
+    
+    - name: Upload Linux artifact
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v3
+      with:
+        name: dopewars-linux
+        path: target/release/dopewars-gui
+    
+    - name: Upload macOS artifact
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v3
+      with:
+        name: dopewars-macos
+        path: target/release/dopewars-gui
