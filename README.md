@@ -1,5 +1,5 @@
 # Dopewars-written-in-Rust
-- The classic Dopewars - written in Rust, with pure vibe coding in Claude 3.7\
+- The classic Dopewars - written in Rust, with pure vibe coding in Claude 3.7
 - Who knew Rust had a GUI🤔
 
 ## Dependencies
